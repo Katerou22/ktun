@@ -1,4 +1,4 @@
-const XRAY_HOST = "51.255.9.237";
+const XRAY_HOST = "ip237.ip-51-255-9.eu";
 const XRAY_PORT = 37899;
 
 export async function onRequest(context) {
