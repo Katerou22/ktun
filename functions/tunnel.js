@@ -5,20 +5,34 @@ export async function onRequest(context) {
   const request = context.request;
   const url = new URL(request.url);
 
-  // Forward everything to Xray, preserving path + query
+  // Forward everything to Xray preserving path + query + method + body
   const backendUrl = `http://${XRAY_HOST}:${XRAY_PORT}${url.pathname}${url.search}`;
 
-  const headers = new Headers(request.headers);
-  headers.set("Host", `${XRAY_HOST}:${XRAY_PORT}`);
+  const headers = new Headers();
+  // Only forward relevant headers, set Host correctly
+  headers.set("Host", XRAY_HOST);
+  headers.set("Content-Type", request.headers.get("Content-Type") || "application/octet-stream");
 
-  const response = await fetch(backendUrl, {
-    method:  request.method,
-    headers: headers,
-    body:    request.body,
-  });
+  // Forward xhttp specific headers
+  for (const [k, v] of request.headers) {
+    const lower = k.toLowerCase();
+    if (lower.startsWith("x-") || lower === "content-length") {
+      headers.set(k, v);
+    }
+  }
 
-  return new Response(response.body, {
-    status:  response.status,
-    headers: response.headers,
-  });
+  try {
+    const response = await fetch(backendUrl, {
+      method:  request.method,
+      headers: headers,
+      body:    request.body,
+    });
+
+    return new Response(response.body, {
+      status:  response.status,
+      headers: response.headers,
+    });
+  } catch(e) {
+    return new Response(`error: ${e.message}`, { status: 502 });
+  }
 }
