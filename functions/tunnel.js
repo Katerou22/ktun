@@ -5,8 +5,19 @@ const XRAY_PATH = "/chats";
 export async function onRequest(context) {
   const request = context.request;
 
-  if (request.headers.get("Upgrade") !== "websocket") {
-    return new Response("WebSocket required", { status: 426 });
+  // Cloudflare Pages passes WebSocket upgrade differently
+  // Check both header variations
+  const upgrade = request.headers.get("Upgrade") ||
+                  request.headers.get("upgrade") || "";
+
+  const isWebSocket = upgrade.toLowerCase() === "websocket" ||
+                      request.headers.get("sec-websocket-key") !== null ||
+                      request.headers.get("Sec-WebSocket-Key") !== null;
+
+  if (!isWebSocket) {
+    return new Response(`upgrade: ${upgrade} | ws-key: ${request.headers.get("sec-websocket-key")}`, {
+      headers: { "content-type": "text/plain" }
+    });
   }
 
   const { 0: client, 1: worker } = new WebSocketPair();
