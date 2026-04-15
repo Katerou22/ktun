@@ -3,7 +3,7 @@ const XRAY_PORT = 37899;
 
 export async function onRequest(context) {
   const url = new URL(context.request.url);
-  const path = url.pathname === "/" ? "/debug" : url.pathname;
+  const path = url.pathname;
   const target = `http://${XRAY_HOST}:${XRAY_PORT}${path}${url.search}`;
 
   const lines = [];
